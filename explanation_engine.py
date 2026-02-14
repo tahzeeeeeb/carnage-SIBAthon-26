@@ -9,12 +9,10 @@ EXPLANATIONS = {
 
 def generate_explanations(detection_results):
     explanations = []
-
     for category, data in detection_results.items():
         if data["count"] > 0:
             explanations.append({
                 "type": category,
                 "explanation": EXPLANATIONS.get(category, "")
             })
-
     return explanations

@@ -2,33 +2,1539 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>DarkSentinel</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DarkSentinel - Dark Pattern & Cookie Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .shield-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .connection-status.connected {
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
+            border: 1px solid rgba(46, 213, 115, 0.3);
+        }
+
+        .connection-status.disconnected {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .connection-status.checking {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffa502;
+            border: 1px solid rgba(255, 165, 2, 0.3);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .connected .status-dot {
+            background: #2ed573;
+        }
+
+        .disconnected .status-dot {
+            background: #ff6b6b;
+        }
+
+        .checking .status-dot {
+            background: #ffa502;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-btn:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a0a0a0;
+        }
+
+        .tab-btn:not(.active):hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Help Section */
+        .help-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .help-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .help-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .help-content {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .help-content.hidden {
+            display: none;
+        }
+
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .pattern-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid;
+        }
+
+        .pattern-card.urgency { border-color: #ff6b6b; }
+        .pattern-card.scarcity { border-color: #ffa502; }
+        .pattern-card.confirmshaming { border-color: #a55eea; }
+        .pattern-card.forced { border-color: #00d4ff; }
+
+        .pattern-card h4 {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pattern-card.urgency h4 { color: #ff6b6b; }
+        .pattern-card.scarcity h4 { color: #ffa502; }
+        .pattern-card.confirmshaming h4 { color: #a55eea; }
+        .pattern-card.forced h4 { color: #00d4ff; }
+
+        .pattern-card p {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box h4 {
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            font-size: 0.9rem;
+            color: #c0c0c0;
+        }
+
+        /* Form Elements */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        textarea, input[type="text"], select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        textarea:focus, input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        textarea::placeholder, input::placeholder {
+            color: #606060;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a0a0a0;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Results */
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .score-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+        }
+
+        .score-value span {
+            font-size: 1.5rem;
+            color: #606060;
+        }
+
+        .score-label {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .risk-badge {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .risk-badge.low {
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
+            border: 2px solid #2ed573;
+        }
+
+        .risk-badge.medium {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffa502;
+            border: 2px solid #ffa502;
+        }
+
+        .risk-badge.high {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 2px solid #ff6b6b;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-fill.low {
+            background: linear-gradient(90deg, #2ed573, #7bed9f);
+        }
+
+        .progress-fill.medium {
+            background: linear-gradient(90deg, #ffa502, #ffbe76);
+        }
+
+        .progress-fill.high {
+            background: linear-gradient(90deg, #ff6b6b, #ff4757);
+        }
+
+        /* Detection Cards */
+        .detection-card {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+
+        .detection-card.urgency {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+        }
+
+        .detection-card.scarcity {
+            background: rgba(255, 165, 2, 0.1);
+            border-color: #ffa502;
+        }
+
+        .detection-card.confirmshaming {
+            background: rgba(165, 94, 234, 0.1);
+            border-color: #a55eea;
+        }
+
+        .detection-card.forced, .detection-card.forced_continuity {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+        }
+
+        .detection-card.misdirection {
+            background: rgba(255, 193, 7, 0.1);
+            border-color: #ffc107;
+        }
+
+        .detection-card.social_proof {
+            background: rgba(233, 30, 99, 0.1);
+            border-color: #e91e63;
+        }
+
+        .detection-card.hidden_costs {
+            background: rgba(156, 39, 176, 0.1);
+            border-color: #9c27b0;
+        }
+
+        .detection-card.default {
+            background: rgba(158, 158, 158, 0.1);
+            border-color: #9e9e9e;
+        }
+
+        .detection-card.safe {
+            background: rgba(46, 213, 115, 0.1);
+            border-color: #2ed573;
+        }
+
+        .detection-card.error {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+        }
+
+        .detection-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .detection-card.urgency h4 { color: #ff6b6b; }
+        .detection-card.scarcity h4 { color: #ffa502; }
+        .detection-card.confirmshaming h4 { color: #a55eea; }
+        .detection-card.forced h4, .detection-card.forced_continuity h4 { color: #00d4ff; }
+        .detection-card.misdirection h4 { color: #ffc107; }
+        .detection-card.social_proof h4 { color: #e91e63; }
+        .detection-card.hidden_costs h4 { color: #9c27b0; }
+        .detection-card.default h4 { color: #9e9e9e; }
+        .detection-card.safe h4 { color: #2ed573; }
+        .detection-card.error h4 { color: #ff6b6b; }
+
+        .detection-card .matches {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .detection-card .explanation {
+            font-size: 0.9rem;
+            color: #c0c0c0;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .detection-card .warning {
+            font-size: 0.85rem;
+            color: #808080;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Cookie Form */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            color: #e0e0e0;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        /* Security Flags */
+        .flag-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .flag-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .flag-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .flag-icon.present {
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
+        }
+
+        .flag-icon.missing {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .flag-name {
+            font-weight: 600;
+        }
+
+        .flag-desc {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+        }
+
+        .flag-status {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .flag-status.present {
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
+        }
+
+        .flag-status.missing {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        /* Value Analysis */
+        .value-analysis {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .value-analysis h4 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .value-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+            margin-top: 5px;
+        }
+
+        /* How to find cookies */
+        .steps-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .steps-list ol {
+            padding-left: 20px;
+        }
+
+        .steps-list li {
+            margin-bottom: 10px;
+            color: #c0c0c0;
+        }
+
+        .steps-list kbd {
+            background: rgba(102, 126, 234, 0.3);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+
+        /* API Info Box */
+        .api-info {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .api-info h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-info code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .score-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .checkbox-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results.show {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Toggle Arrow */
+        .toggle-arrow {
+            transition: transform 0.3s;
+        }
+
+        .toggle-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        /* Backend mode indicator */
+        .mode-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .mode-badge.backend {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+        }
+
+        .mode-badge.frontend {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffa502;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="shield-icon">🛡️</div>
+            <h1>DarkSentinel</h1>
+            <p>Intelligent Dark Pattern & Cookie Security Analysis</p>
+        </header>
 
-<div class="container">
-
-    <h1>DarkSentinel</h1>
-    <p class="subtitle">Intelligent Dark Pattern Detection System</p>
-
-    <textarea id="inputText" placeholder="Paste webpage content here..."></textarea>
-
-    <button id="analyzeBtn">Analyze</button>
-    
-    <div class="result-box" id="resultBox">
-        <div class="score">
-            Manipulation Index: <span id="scoreValue">0</span>
+        <!-- Connection Status -->
+        <div class="connection-status checking" id="connection-status">
+            <span class="status-dot"></span>
+            <span id="status-text">Checking backend connection...</span>
         </div>
 
-        <div class="risk" id="riskBadge">Low</div>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('darkpattern', this)">
+                👁️ Dark Patterns
+                <span class="mode-badge backend" id="dp-mode-badge">API</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('cookie', this)">
+                🍪 Cookie Security
+                <span class="mode-badge frontend">Local</span>
+            </button>
+        </div>
 
-        <h3>Detected Patterns</h3>
-        <div id="patterns"></div>
+        <!-- Dark Pattern Tab -->
+        <div id="darkpattern-tab" class="tab-content active">
+            <!-- API Info -->
+            <div class="api-info" id="api-info">
+                <h4>🔗 Backend Connected</h4>
+                <p>Analysis powered by Flask backend at <code id="api-url">http://127.0.0.1:5000/analyze</code></p>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card">
+                <div class="help-header" onclick="toggleHelp('dp-help')">
+                    <div class="help-title">
+                        ℹ️ <span>What is this? How do I use it?</span>
+                    </div>
+                    <span class="toggle-arrow" id="dp-help-arrow">▼</span>
+                </div>
+                <div class="help-content" id="dp-help">
+                    <p><strong>Dark patterns</strong> are deceptive UI/UX designs that trick users into doing things they didn't intend to do.</p>
+                    
+                    <div class="pattern-grid">
+                        <div class="pattern-card urgency">
+                            <h4>⚡ Urgency Tactics</h4>
+                            <p>Words like "Hurry!", "Act now!", "Limited time" that pressure quick decisions</p>
+                        </div>
+                        <div class="pattern-card scarcity">
+                            <h4>⚠️ Scarcity</h4>
+                            <p>"Only 2 left!", "Almost sold out" - creates fear of missing out</p>
+                        </div>
+                        <div class="pattern-card confirmshaming">
+                            <h4>❌ Confirmshaming</h4>
+                            <p>"No thanks, I hate saving money" - guilt-tripping decline buttons</p>
+                        </div>
+                        <div class="pattern-card forced">
+                            <h4>🔄 Forced Continuity</h4>
+                            <p>"Subscription continues automatically" - hidden recurring charges</p>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>📝 How to use:</h4>
+                        <p>Copy and paste any text from websites, emails, or apps - like checkout pages, subscription forms, popup messages, or terms of service. The analyzer will scan for manipulation tactics.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div class="card">
+                <label for="text-input">Paste text to analyze:</label>
+                <textarea id="text-input" placeholder="Paste website text, checkout page content, popup messages, email content, or any text you want to check for manipulation..."></textarea>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="analyze-btn" onclick="analyzeText()">
+                        🔍 Analyze Text
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadTextExample()">
+                        📋 Load Example
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card results" id="text-results">
+                <div class="score-header">
+                    <div>
+                        <div class="score-label">Manipulation Index</div>
+                        <div class="score-value"><span id="text-score">0</span><span>/100</span></div>
+                    </div>
+                    <div class="risk-badge" id="text-risk-badge">LOW RISK</div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="text-progress"></div>
+                </div>
+
+                <h3 style="margin-bottom: 15px;">Detected Patterns:</h3>
+                <div id="text-detections"></div>
+            </div>
+        </div>
+
+        <!-- Cookie Tab -->
+        <div id="cookie-tab" class="tab-content">
+            <!-- Help Section -->
+            <div class="card">
+                <div class="help-header" onclick="toggleHelp('cookie-help')">
+                    <div class="help-title">
+                        ℹ️ <span>What is this? Where do I get cookie data?</span>
+                    </div>
+                    <span class="toggle-arrow" id="cookie-help-arrow">▼</span>
+                </div>
+                <div class="help-content" id="cookie-help">
+                    <p><strong>Cookies</strong> are small files websites store on your browser. Some are necessary for sites to work, while others track your activity across the web.</p>
+                    
+                    <div class="steps-list">
+                        <h4 style="margin-bottom: 10px; color: #00d4ff;">How to find cookies in your browser:</h4>
+                        <ol>
+                            <li>Open any website you want to inspect</li>
+                            <li>Press <kbd>F12</kbd> to open Developer Tools</li>
+                            <li>Go to <strong>Application</strong> tab (Chrome) or <strong>Storage</strong> tab (Firefox)</li>
+                            <li>Click <strong>Cookies</strong> in the left sidebar</li>
+                            <li>Select the website to see all its cookies</li>
+                        </ol>
+                    </div>
+
+                    <div class="pattern-grid">
+                        <div class="pattern-card forced">
+                            <h4>🔒 Secure Flag</h4>
+                            <p>When checked, cookie only sent over HTTPS (encrypted connection)</p>
+                        </div>
+                        <div class="pattern-card confirmshaming">
+                            <h4>📄 HttpOnly Flag</h4>
+                            <p>When checked, JavaScript can't access the cookie (protects against XSS)</p>
+                        </div>
+                        <div class="pattern-card scarcity">
+                            <h4>🌐 SameSite</h4>
+                            <p>Controls if cookie is sent with cross-site requests (CSRF protection)</p>
+                        </div>
+                        <div class="pattern-card urgency">
+                            <h4>⏰ Expires</h4>
+                            <p>When the cookie will be deleted. Long expiry can indicate tracking</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cookie Input Form -->
+            <div class="card">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cookie-name">Cookie Name</label>
+                        <input type="text" id="cookie-name" placeholder="e.g., _ga, session_id, user_token">
+                    </div>
+                    <div class="form-group">
+                        <label for="cookie-domain">Domain</label>
+                        <input type="text" id="cookie-domain" placeholder="e.g., .example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cookie-value">Cookie Value <span style="color: #ff6b6b;">*</span></label>
+                    <textarea id="cookie-value" placeholder="Paste the cookie value here..." style="min-height: 80px; font-family: monospace;"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cookie-path">Path</label>
+                        <input type="text" id="cookie-path" placeholder="/" value="/">
+                    </div>
+                    <div class="form-group">
+                        <label for="cookie-expires">Expires</label>
+                        <input type="text" id="cookie-expires" placeholder="2025-12-31">
+                    </div>
+                    <div class="form-group">
+                        <label for="cookie-samesite">SameSite</label>
+                        <select id="cookie-samesite">
+                            <option value="">Not Set</option>
+                            <option value="Strict">Strict</option>
+                            <option value="Lax">Lax</option>
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="cookie-secure">
+                        <span>🔒 Secure</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="cookie-httponly">
+                        <span>📄 HttpOnly</span>
+                    </label>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="analyzeCookie()">
+                        🔍 Analyze Cookie
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadCookieExample()">
+                        📋 Load Example
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cookie Results -->
+            <div class="card results" id="cookie-results">
+                <div class="score-header">
+                    <div>
+                        <div class="score-label">Security Risk Score</div>
+                        <div class="score-value"><span id="cookie-score">0</span><span>/100</span></div>
+                    </div>
+                    <div class="risk-badge" id="cookie-risk-badge">LOW RISK</div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cookie-progress"></div>
+                </div>
+
+                <div id="cookie-tracker"></div>
+                
+                <h3 style="margin-bottom: 15px; margin-top: 20px;">Security Flags:</h3>
+                <div id="cookie-flags"></div>
+
+                <div class="value-analysis" id="cookie-value-analysis">
+                    <h4>🔬 Value Analysis</h4>
+                    <div class="value-stats" id="cookie-value-stats"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-</div>
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+        const ANALYZE_ENDPOINT = '/analyze';
+        
+        let backendConnected = false;
 
-<script src="script.js"></script>
+        // Known trackers for local cookie analysis
+        const KNOWN_TRACKERS = {
+            "_ga": { name: "Google Analytics", type: "Analytics", risk: "medium" },
+            "_gid": { name: "Google Analytics", type: "Analytics", risk: "medium" },
+            "_fbp": { name: "Facebook Pixel", type: "Advertising", risk: "high" },
+            "_fbc": { name: "Facebook Click", type: "Advertising", risk: "high" },
+            "fr": { name: "Facebook Ads", type: "Advertising", risk: "high" },
+            "_gcl_au": { name: "Google Ads", type: "Advertising", risk: "high" },
+            "IDE": { name: "Google DoubleClick", type: "Advertising", risk: "high" },
+            "_uetsid": { name: "Microsoft Ads", type: "Advertising", risk: "high" },
+            "MUID": { name: "Microsoft Tracking", type: "Tracking", risk: "high" },
+            "hubspotutk": { name: "HubSpot", type: "Marketing", risk: "medium" },
+            "_clck": { name: "Microsoft Clarity", type: "Analytics", risk: "medium" },
+            "intercom-id": { name: "Intercom", type: "Analytics", risk: "medium" },
+        };
+
+        // Pattern icons and colors mapping
+        const PATTERN_CONFIG = {
+            urgency: { icon: '⚡', color: '#ff6b6b', label: 'Urgency Tactics' },
+            scarcity: { icon: '⚠️', color: '#ffa502', label: 'Scarcity' },
+            confirmshaming: { icon: '❌', color: '#a55eea', label: 'Confirmshaming' },
+            forced_continuity: { icon: '🔄', color: '#00d4ff', label: 'Forced Continuity' },
+            misdirection: { icon: '🎯', color: '#ffc107', label: 'Misdirection' },
+            social_proof: { icon: '👥', color: '#e91e63', label: 'Social Proof' },
+            hidden_costs: { icon: '💰', color: '#9c27b0', label: 'Hidden Costs' },
+            default: { icon: '🔍', color: '#9e9e9e', label: 'Pattern Detected' }
+        };
+
+        // ============================================
+        // BACKEND CONNECTION CHECK
+        // ============================================
+        async function checkBackendConnection() {
+            const statusEl = document.getElementById('connection-status');
+            const statusText = document.getElementById('status-text');
+            const apiInfo = document.getElementById('api-info');
+            const modeBadge = document.getElementById('dp-mode-badge');
+
+            try {
+                // Try to reach the backend with a simple request
+                const response = await fetch(API_BASE_URL + ANALYZE_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: 'test' }),
+                    // Short timeout to detect if server is down
+                    signal: AbortSignal.timeout(5000)
+                });
+
+                // Even if we get an error response, the server is running
+                backendConnected = true;
+                statusEl.className = 'connection-status connected';
+                statusText.textContent = 'Backend connected at ' + API_BASE_URL;
+                apiInfo.style.display = 'block';
+                modeBadge.textContent = 'API';
+                modeBadge.className = 'mode-badge backend';
+
+            } catch (error) {
+                backendConnected = false;
+                statusEl.className = 'connection-status disconnected';
+                statusText.textContent = 'Backend offline - Using local analysis';
+                apiInfo.innerHTML = `
+                    <h4>⚠️ Backend Not Connected</h4>
+                    <p>Make sure your Flask server is running: <code>python app.py</code></p>
+                    <p style="margin-top: 8px; font-size: 0.85rem; color: #a0a0a0;">Currently using local fallback analysis.</p>
+                `;
+                apiInfo.style.borderColor = 'rgba(255, 165, 2, 0.3)';
+                apiInfo.style.background = 'rgba(255, 165, 2, 0.1)';
+                apiInfo.querySelector('h4').style.color = '#ffa502';
+                modeBadge.textContent = 'Local';
+                modeBadge.className = 'mode-badge frontend';
+            }
+        }
+
+        // Check connection on page load
+        checkBackendConnection();
+
+        // ============================================
+        // TAB SWITCHING
+        // ============================================
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(tab + '-tab').classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // Toggle help sections
+        function toggleHelp(id) {
+            const content = document.getElementById(id);
+            const arrow = document.getElementById(id + '-arrow');
+            content.classList.toggle('hidden');
+            arrow.classList.toggle('open');
+        }
+
+        // ============================================
+        // DARK PATTERN ANALYSIS (Backend API)
+        // ============================================
+        async function analyzeText() {
+            const text = document.getElementById('text-input').value;
+            const analyzeBtn = document.getElementById('analyze-btn');
+            
+            if (!text.trim()) {
+                showError('Please enter some text to analyze');
+                return;
+            }
+
+            // Show loading state
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
+
+            try {
+                let result;
+                
+                if (backendConnected) {
+                    // Use backend API
+                    result = await analyzeWithBackend(text);
+                } else {
+                    // Use local fallback
+                    result = analyzeLocally(text);
+                }
+
+                displayTextResults(result);
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showError('Analysis failed: ' + error.message);
+            } finally {
+                // Reset button
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '🔍 Analyze Text';
+            }
+        }
+
+        // Backend API call
+        async function analyzeWithBackend(text) {
+            const response = await fetch(API_BASE_URL + ANALYZE_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Backend error');
+            }
+
+            // Transform backend response to our display format
+            return {
+                score: data.manipulation_index,
+                riskLevel: data.risk_level.toLowerCase(),
+                patterns: data.detected_patterns,
+                explanations: data.explanations
+            };
+        }
+
+        // Local fallback analysis (when backend is unavailable)
+        function analyzeLocally(text) {
+            const lowerText = text.toLowerCase();
+            
+            const patterns = {
+                urgency: { matches: [], count: 0 },
+                scarcity: { matches: [], count: 0 },
+                confirmshaming: { matches: [], count: 0 },
+                forced_continuity: { matches: [], count: 0 }
+            };
+
+            const keywords = {
+                urgency: ["hurry", "act now", "limited time", "last chance", "offer ends", "don't miss", "expires", "immediately", "urgent", "today only"],
+                scarcity: ["only 1 left", "only 2 left", "almost sold out", "limited stock", "selling fast", "few remaining", "almost gone"],
+                confirmshaming: ["no thanks, i don't like", "i prefer to miss out", "no i hate", "i don't want to save"],
+                forced_continuity: ["auto-renew", "charged automatically", "subscription continues", "billed monthly", "automatic renewal"]
+            };
+
+            // Detect patterns
+            Object.keys(keywords).forEach(category => {
+                keywords[category].forEach(phrase => {
+                    if (lowerText.includes(phrase)) {
+                        patterns[category].matches.push(phrase);
+                        patterns[category].count++;
+                    }
+                });
+            });
+
+            // Calculate score
+            const weights = { urgency: 15, scarcity: 20, confirmshaming: 25, forced_continuity: 30 };
+            let score = 0;
+            Object.keys(patterns).forEach(cat => {
+                score += patterns[cat].count * weights[cat];
+            });
+            score = Math.min(score, 100);
+
+            const riskLevel = score > 60 ? 'high' : score > 30 ? 'medium' : 'low';
+
+            // Generate basic explanations
+            const explanations = {};
+            Object.keys(patterns).forEach(cat => {
+                if (patterns[cat].count > 0) {
+                    explanations[cat] = `Found ${patterns[cat].count} ${cat.replace('_', ' ')} pattern(s) that may be manipulative.`;
+                }
+            });
+
+            return {
+                score: score,
+                riskLevel: riskLevel,
+                patterns: patterns,
+                explanations: explanations
+            };
+        }
+
+        // Display results
+        function displayTextResults(result) {
+            document.getElementById('text-results').classList.add('show');
+            document.getElementById('text-score').textContent = Math.round(result.score);
+            
+            const badge = document.getElementById('text-risk-badge');
+            badge.textContent = result.riskLevel.toUpperCase() + ' RISK';
+            badge.className = 'risk-badge ' + result.riskLevel;
+            
+            const progress = document.getElementById('text-progress');
+            progress.style.width = result.score + '%';
+            progress.className = 'progress-fill ' + result.riskLevel;
+
+            let detectionsHTML = '';
+            let hasPatterns = false;
+
+            // Handle different response formats from backend
+            const patterns = result.patterns || {};
+            const explanations = result.explanations || {};
+
+            Object.keys(patterns).forEach(category => {
+                const patternData = patterns[category];
+                const config = PATTERN_CONFIG[category] || PATTERN_CONFIG.default;
+                
+                // Check if pattern has matches
+                let matches = [];
+                let count = 0;
+
+                if (Array.isArray(patternData)) {
+                    matches = patternData;
+                    count = patternData.length;
+                } else if (typeof patternData === 'object') {
+                    matches = patternData.matches || [];
+                    count = patternData.count || matches.length;
+                }
+
+                if (count > 0) {
+                    hasPatterns = true;
+                    const explanation = explanations[category] || '';
+                    const categoryClass = category.replace('_', '-');
+
+                    detectionsHTML += `
+                        <div class="detection-card ${categoryClass}">
+                            <h4>${config.icon} ${config.label} (${count} found)</h4>
+                            ${matches.length > 0 ? `<p class="matches"><strong>Matches:</strong> ${matches.join(', ')}</p>` : ''}
+                            ${explanation ? `<p class="explanation">💡 ${explanation}</p>` : ''}
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasPatterns) {
+                detectionsHTML = `
+                    <div class="detection-card safe">
+                        <h4>✅ No manipulation patterns detected</h4>
+                        <p class="matches">This text appears to be free of common dark patterns</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('text-detections').innerHTML = detectionsHTML;
+        }
+
+        function showError(message) {
+            document.getElementById('text-results').classList.add('show');
+            document.getElementById('text-score').textContent = '—';
+            document.getElementById('text-risk-badge').textContent = 'ERROR';
+            document.getElementById('text-risk-badge').className = 'risk-badge high';
+            document.getElementById('text-progress').style.width = '0%';
+            document.getElementById('text-detections').innerHTML = `
+                <div class="detection-card error">
+                    <h4>❌ Error</h4>
+                    <p class="matches">${message}</p>
+                </div>
+            `;
+        }
+
+        function loadTextExample() {
+            document.getElementById('text-input').value = "🔥 HURRY! Only 2 left in stock! This limited time offer ends today. Act now before it's too late! Your subscription continues automatically and you'll be charged automatically every month. Don't miss out on this exclusive deal!\n\nNo thanks, I don't like saving money.";
+        }
+
+        // ============================================
+        // COOKIE ANALYSIS (Local - no backend needed)
+        // ============================================
+        function analyzeCookie() {
+            const cookieValue = document.getElementById('cookie-value').value;
+            if (!cookieValue.trim()) {
+                return;
+            }
+
+            const cookie = {
+                name: document.getElementById('cookie-name').value,
+                value: cookieValue,
+                domain: document.getElementById('cookie-domain').value,
+                path: document.getElementById('cookie-path').value,
+                expires: document.getElementById('cookie-expires').value,
+                secure: document.getElementById('cookie-secure').checked,
+                httponly: document.getElementById('cookie-httponly').checked,
+                samesite: document.getElementById('cookie-samesite').value
+            };
+
+            const analysis = {
+                riskScore: 0,
+                flags: [],
+                tracker: null,
+                valueInfo: {}
+            };
+
+            // Check security flags
+            if (!cookie.secure) {
+                analysis.riskScore += 15;
+                analysis.flags.push({
+                    name: 'Secure',
+                    status: 'missing',
+                    description: 'Cookie can be sent over unencrypted HTTP'
+                });
+            } else {
+                analysis.flags.push({
+                    name: 'Secure',
+                    status: 'present',
+                    description: 'Cookie only sent over HTTPS'
+                });
+            }
+
+            if (!cookie.httponly) {
+                analysis.riskScore += 20;
+                analysis.flags.push({
+                    name: 'HttpOnly',
+                    status: 'missing',
+                    description: 'Cookie accessible via JavaScript (XSS risk)'
+                });
+            } else {
+                analysis.flags.push({
+                    name: 'HttpOnly',
+                    status: 'present',
+                    description: 'Cookie protected from JavaScript access'
+                });
+            }
+
+            if (!cookie.samesite || cookie.samesite === 'None') {
+                analysis.riskScore += 15;
+                analysis.flags.push({
+                    name: 'SameSite',
+                    status: 'missing',
+                    description: 'Cookie vulnerable to CSRF attacks'
+                });
+            } else {
+                analysis.flags.push({
+                    name: 'SameSite',
+                    status: 'present',
+                    description: 'SameSite set to ' + cookie.samesite
+                });
+            }
+
+            // Check for known trackers
+            const trackerKey = Object.keys(KNOWN_TRACKERS).find(key => 
+                cookie.name.startsWith(key) || cookie.name === key
+            );
+            if (trackerKey) {
+                analysis.tracker = KNOWN_TRACKERS[trackerKey];
+                analysis.riskScore += analysis.tracker.risk === 'high' ? 25 : 15;
+            }
+
+            // Analyze value
+            const entropy = calculateEntropy(cookie.value);
+            analysis.valueInfo = {
+                length: cookie.value.length,
+                entropy: entropy.toFixed(2),
+                isBase64: /^[A-Za-z0-9+/=]{20,}$/.test(cookie.value) && cookie.value.length % 4 === 0,
+                hasHighEntropy: entropy > 4.0
+            };
+
+            // Check domain scope
+            if (cookie.domain && cookie.domain.startsWith('.')) {
+                const parts = cookie.domain.split('.').filter(Boolean);
+                if (parts.length <= 2) {
+                    analysis.riskScore += 10;
+                }
+            }
+
+            analysis.riskScore = Math.min(analysis.riskScore, 100);
+            analysis.riskLevel = analysis.riskScore >= 60 ? 'high' : analysis.riskScore >= 30 ? 'medium' : 'low';
+
+            displayCookieResults(analysis);
+        }
+
+        function calculateEntropy(str) {
+            if (!str) return 0;
+            const freq = {};
+            for (const char of str) freq[char] = (freq[char] || 0) + 1;
+            let entropy = 0;
+            const len = str.length;
+            for (const count of Object.values(freq)) {
+                const p = count / len;
+                entropy -= p * Math.log2(p);
+            }
+            return entropy;
+        }
+
+        function displayCookieResults(analysis) {
+            document.getElementById('cookie-results').classList.add('show');
+            document.getElementById('cookie-score').textContent = analysis.riskScore;
+            
+            const badge = document.getElementById('cookie-risk-badge');
+            badge.textContent = analysis.riskLevel.toUpperCase() + ' RISK';
+            badge.className = 'risk-badge ' + analysis.riskLevel;
+            
+            const progress = document.getElementById('cookie-progress');
+            progress.style.width = analysis.riskScore + '%';
+            progress.className = 'progress-fill ' + analysis.riskLevel;
+
+            // Tracker info
+            let trackerHTML = '';
+            if (analysis.tracker) {
+                trackerHTML = `
+                    <div class="detection-card error">
+                        <h4>🚨 Known Tracker Detected!</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px;">
+                            <div>
+                                <div style="color: #808080; font-size: 0.85rem;">Service</div>
+                                <div style="font-weight: 600;">${analysis.tracker.name}</div>
+                            </div>
+                            <div>
+                                <div style="color: #808080; font-size: 0.85rem;">Type</div>
+                                <div style="font-weight: 600;">${analysis.tracker.type}</div>
+                            </div>
+                            <div>
+                                <div style="color: #808080; font-size: 0.85rem;">Risk Level</div>
+                                <div style="font-weight: 600; color: ${analysis.tracker.risk === 'high' ? '#ff6b6b' : '#ffa502'};">${analysis.tracker.risk.toUpperCase()}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('cookie-tracker').innerHTML = trackerHTML;
+
+            // Security flags
+            let flagsHTML = '';
+            analysis.flags.forEach(flag => {
+                flagsHTML += `
+                    <div class="flag-item">
+                        <div class="flag-info">
+                            <div class="flag-icon ${flag.status}">
+                                ${flag.status === 'present' ? '✓' : '✗'}
+                            </div>
+                            <div>
+                                <div class="flag-name">${flag.name}</div>
+                                <div class="flag-desc">${flag.description}</div>
+                            </div>
+                        </div>
+                        <div class="flag-status ${flag.status}">
+                            ${flag.status === 'present' ? 'SECURE' : 'MISSING'}
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('cookie-flags').innerHTML = flagsHTML;
+
+            // Value analysis
+            document.getElementById('cookie-value-stats').innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${analysis.valueInfo.length}</div>
+                    <div class="stat-label">Characters</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${analysis.valueInfo.entropy}</div>
+                    <div class="stat-label">Entropy (bits)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${analysis.valueInfo.isBase64 ? 'Yes' : 'No'}</div>
+                    <div class="stat-label">Base64 Encoded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: ${analysis.valueInfo.hasHighEntropy ? '#ffa502' : '#2ed573'}">
+                        ${analysis.valueInfo.hasHighEntropy ? 'High' : 'Normal'}
+                    </div>
+                    <div class="stat-label">Randomness</div>
+                </div>
+            `;
+        }
+
+        function loadCookieExample() {
+            document.getElementById('cookie-name').value = '_ga';
+            document.getElementById('cookie-value').value = 'GA1.2.1234567890.1609459200';
+            document.getElementById('cookie-domain').value = '.example.com';
+            document.getElementById('cookie-path').value = '/';
+            document.getElementById('cookie-expires').value = '2026-12-31';
+            document.getElementById('cookie-samesite').value = '';
+            document.getElementById('cookie-secure').checked = false;
+            document.getElementById('cookie-httponly').checked = false;
+        }
+    </script>
 </body>
 </html>
